@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduConnect AI - Premium Single File Platform</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ==========================================================================
+           GLOBAL TOKENS & RESET
+           ========================================================================== */
+        :root {
+            --bg-dark: #0f111a;
+            --bg-darker: #07080d;
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.5);
+            --secondary: #8b5cf6;
+            --text-light: #f8fafc;
+            --text-muted: #94a3b8;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --ai-accent: #00d2ff;
+            --gold: #fbbf24;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+        body { background-color: var(--bg-dark); color: var(--text-light); min-height: 100vh; overflow-x: hidden; }
+        
+        /* ==========================================================================
+           ANIMATIONS & BACKGROUND
+           ========================================================================== */
+        .background-animation {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1;
+            background: radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.15), transparent 25%),
+                        radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.15), transparent 25%);
+            filter: blur(80px); animation: pulse 10s infinite alternate;
+        }
+        @keyframes pulse { 0% { transform: scale(1); } 100% { transform: scale(1.1); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        
+        /* ==========================================================================
+           UTILITIES & COMPONENTS
+           ========================================================================== */
+        h1, h2, h3, h4 { font-weight: 600; }
+        .highlight { color: var(--primary); text-shadow: 0 0 15px var(--primary-glow); }
+        .gold-highlight { color: var(--gold); text-shadow: 0 0 15px rgba(251, 191, 36, 0.5); }
+        
+        .view { display: none; animation: fadeIn 0.4s ease-in-out; }
+        .view.active { display: block; }
+        
+        .glass-panel {
+            background: var(--glass-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border); border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        
+        .btn {
+            padding: 12px 24px; border-radius: 12px; border: none; font-size: 1rem;
+            font-weight: 500; cursor: pointer; transition: all 0.3s ease; display: inline-block;
+            text-decoration: none; text-align: center;
+        }
+        .primary-btn { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; box-shadow: 0 10px 20px -10px var(--primary-glow); }
+        .primary-btn:hover { transform: translateY(-2px); box-shadow: 0 15px 25px -10px var(--primary-glow); background: linear-gradient(135deg, #7174f3, #9869f8); }
+        .secondary-btn { background: rgba(255, 255, 255, 0.05); color: var(--text-light); border: 1px solid var(--glass-border); }
+        .secondary-btn:hover { background: rgba(255, 255, 255, 0.1); transform: translateY(-2px); }
+        .gold-btn { background: linear-gradient(135deg, #f59e0b, #fbbf24); color: #000; font-weight: bold; box-shadow: 0 10px 20px -10px rgba(251, 191, 36, 0.5); }
+        .gold-btn:hover { transform: translateY(-2px); background: linear-gradient(135deg, #fbbf24, #fcd34d); }
+        
+        .full-width-btn { width: 100%; margin-top: 10px; }
+        /* ==========================================================================
+           MODALS (PAYMENT, PRIZES, ALERTS)
+           ========================================================================== */
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7); z-index: 1000; justify-content: center; align-items: center;
+            backdrop-filter: blur(5px);
+        }
+        .modal.active { display: flex; animation: fadeIn 0.3s ease-out; }
+        .modal-content {
+            padding: 40px; text-align: center; max-width: 450px; width: 90%; position: relative;
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .close-btn {
+            position: absolute; top: 15px; right: 20px; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);
+        }
+        .close-btn:hover { color: var(--danger); }
+        .qr-code { margin: 20px auto; display: block; border-radius: 10px; border: 4px solid white; max-width: 150px; }
+        .prize-img { max-width: 200px; margin: 20px auto; display: block; border-radius: 15px; box-shadow: 0 10px 30px rgba(251, 191, 36, 0.3); }
+        /* ==========================================================================
+           NAVBAR
+           ========================================================================== */
+        .navbar { display: flex; justify-content: space-between; align-items: center; padding: 15px 40px; margin: 20px 40px; border-radius: 100px; }
+        .nav-brand { font-size: 1.5rem; font-weight: 700; }
+        .nav-links { display: flex; align-items: center; gap: 20px; }
+        .nav-links span { color: var(--text-muted); text-decoration: none; font-weight: 500; transition: color 0.3s; cursor: pointer; }
+        .nav-links span:hover, .nav-links span.active { color: var(--primary); }
+        .nav-links span.sponsor-tab { display: none; color: var(--gold); }
+        .nav-links span.sponsor-tab.unlocked { display: inline-block; animation: popIn 0.5s; }
+        
+        /* ==========================================================================
+           LOGIN / LOGOUT VIEW
+           ========================================================================== */
+        .auth-container { display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .login-box { width: 100%; max-width: 420px; padding: 40px; animation: slideUp 0.6s ease-out; }
+        .login-header { text-align: center; margin-bottom: 30px; }
+        .login-header h1 { font-size: 2.5rem; margin-bottom: 8px; }
+        .login-header p { color: var(--text-muted); }
+        .input-group { margin-bottom: 20px; }
+        .input-group label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: var(--text-muted); }
+        .input-group input { width: 100%; padding: 14px 16px; border-radius: 12px; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--glass-border); color: white; font-size: 1rem; }
+        .input-group input:focus { outline: none; border-color: var(--primary); }
+        
+        /* ==========================================================================
+           DASHBOARD VIEW
+           ========================================================================== */
+        .dashboard-container { padding: 20px 40px; max-width: 1200px; margin: 0 auto; }
+        .dashboard-header { margin-bottom: 40px; }
+        .dashboard-header h2 { font-size: 2.5rem; }
+        .grid-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; margin-bottom: 40px; }
+        .card { padding: 25px; display: flex; flex-direction: column; }
+        .card h3 { font-size: 1.2rem; margin-bottom: 20px; color: var(--text-light); }
+        .progress-stats { display: flex; gap: 20px; }
+        .stat { flex: 1; background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 12px; text-align: center; border: 1px solid var(--glass-border); }
+        .stat-value { display: block; font-size: 2rem; font-weight: 700; margin-bottom: 5px; }
+        .stat-label { font-size: 0.85rem; color: var(--text-muted); }
+        .feature-card p { color: var(--text-muted); margin-bottom: 20px; line-height: 1.5; flex-grow: 1; }
+        .mentorship-options { display: flex; gap: 10px; }
+        .mentorship-options .btn { flex: 1; padding: 10px; font-size: 0.9rem; }
+        
+        .sponsor-locked-content { display: none; }
+        .sponsor-unlocked-content { display: none; background: rgba(251, 191, 36, 0.1); border: 1px solid var(--gold); padding: 15px; border-radius: 10px; margin-top: 15px; text-align: center; }
+        .sponsor-unlocked-content.active { display: block; animation: fadeIn 0.5s; }
+        /* ==========================================================================
+           CHAT VIEW
+           ========================================================================== */
+        .chat-layout { display: flex; gap: 25px; padding: 0 40px 40px 40px; height: calc(100vh - 120px); max-width: 1400px; margin: 0 auto; }
+        .sidebar { width: 300px; padding: 20px; display: flex; flex-direction: column; overflow-y: auto; }
+        .sidebar h3 { font-size: 1.2rem; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--glass-border); }
+        .contact { display: flex; align-items: center; gap: 15px; padding: 15px; border-radius: 12px; cursor: pointer; transition: all 0.3s; margin-bottom: 10px; border: 1px solid transparent; }
+        .contact:hover { background: rgba(255,255,255,0.05); }
+        .contact.active-contact { background: rgba(99, 102, 241, 0.1); border-color: var(--primary-glow); }
+        .contact-avatar { width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: 600; font-size: 1.2rem; object-fit: cover; }
+        .contact-info h4 { margin-bottom: 4px; font-size: 1rem; }
+        .status { font-size: 0.8rem; font-weight: 500; }
+        .status.online { color: var(--success); }
+        .status.offline { color: var(--danger); }
+        
+        .chat-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        .chat-header { padding: 20px 25px; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; }
+        .ai-badge { background: rgba(0, 210, 255, 0.1); color: var(--ai-accent); border: 1px solid var(--ai-accent); padding: 5px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; animation: pulse 2s infinite alternate; }
+        
+        .subject-selector { padding: 15px 25px; border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; gap: 15px; background: rgba(0,0,0,0.1); overflow-x: auto;}
+        .subject-selector h4 { color: var(--text-muted); font-size: 0.95rem; white-space: nowrap; }
+        .subject-btn { padding: 6px 12px; border-radius: 20px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: white; cursor: pointer; transition: 0.3s; font-size: 0.85rem; white-space: nowrap; }
+        .subject-btn:hover { background: var(--primary); border-color: var(--primary); }
+        .chat-messages { flex: 1; padding: 25px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; scroll-behavior: smooth; }
+        
+        .message-row { display: flex; gap: 15px; max-width: 85%; animation: fadeIn 0.3s ease-in-out; }
+        .message-row.received { align-self: flex-start; }
+        .message-row.sent { align-self: flex-end; flex-direction: row-reverse; }
+        
+        .message-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--glass-border); }
+        
+        .message-content { padding: 15px 20px; border-radius: 18px; font-size: 0.95rem; line-height: 1.6; position: relative; word-wrap: break-word; }
+        .received .message-content { background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border); border-top-left-radius: 4px; }
+        .sent .message-content { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; border-top-right-radius: 4px; }
+        
+        .ai-indicator { font-size: 0.75rem; color: var(--ai-accent); font-weight: bold; margin-bottom: 5px; display: block; }
+        .teacher-indicator { font-size: 0.75rem; color: var(--success); font-weight: bold; margin-bottom: 5px; display: block; }
+        .student-indicator { font-size: 0.75rem; color: #cbd5e1; font-weight: bold; margin-bottom: 5px; display: block; }
+        .chat-input-area { padding: 20px 25px; border-top: 1px solid var(--glass-border); display: flex; gap: 10px; align-items: center; background: rgba(0,0,0,0.2); }
+        .chat-input-area input[type="text"] { flex: 1; padding: 15px 20px; border-radius: 15px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border); color: white; font-size: 1rem; }
+        .chat-input-area input[type="text"]:focus { outline: none; border-color: var(--primary); }
+        .icon-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted); padding: 5px; transition: 0.3s; }
+        .icon-btn:hover { color: var(--primary); transform: scale(1.1); }
+    </style>
+</head>
+<body>
+    <div class="background-animation"></div>
+    <!-- =======================================================
+         PAYMENT MODAL
+         ======================================================= -->
+    <div id="paymentModal" class="modal">
+        <div class="modal-content glass-panel">
+            <span class="close-btn" onclick="closeModal('paymentModal')">&times;</span>
+            <h2 style="color: var(--primary); margin-bottom: 10px;">Premium Mentorship</h2>
+            <p style="color: var(--text-muted); font-size: 0.95rem;">Scan the QR code below to pay and unlock premium guidance + Sponsor Rewards.</p>
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=PremiumMentorshipPayment" alt="Payment QR Code" class="qr-code">
+            <p class="highlight" style="font-size: 1.2rem; margin-bottom: 20px;">Amount: $49.00 / ₹4000</p>
+            <button class="btn gold-btn full-width-btn" onclick="processPayment()">Confirm Payment & Claim Prizes</button>
+        </div>
+    </div>
+    <!-- =======================================================
+         PRIZE SUCCESS MODAL
+         ======================================================= -->
+    <div id="prizeModal" class="modal">
+        <div class="modal-content glass-panel" style="border-color: var(--gold); box-shadow: 0 0 40px rgba(251, 191, 36, 0.2);">
+            <span class="close-btn" onclick="closeModal('prizeModal')">&times;</span>
+            <h2 class="gold-highlight" style="margin-bottom: 10px;">🎉 Payment Successful!</h2>
+            <h3 style="color: var(--text-light); margin-bottom: 15px;">You are now a Premium Sponsor</h3>
+            
+            <img src="https://images.unsplash.com/photo-1565557623262-b51c2513a641?auto=format&fit=crop&w=300&q=80" alt="Prize Trophy" class="prize-img">
+            
+            <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 20px;">
+                Congratulations! As a premium sponsor, you've unlocked:<br><br>
+                <strong style="color: var(--success);">✓ ₹10,000 Bonus Learning Credits</strong><br>
+                <strong style="color: var(--ai-accent);">✓ Exclusive AI Swag Kit Delivery</strong><br>
+                <strong style="color: var(--gold);">✓ VIP Mentorship Access</strong>
+            </p>
+            <button class="btn primary-btn full-width-btn" onclick="closeModal('prizeModal'); activateSponsorMode();">Awesome, Take me to Dashboard</button>
+        </div>
+    </div>
+    <!-- =======================================================
+         VIEW 1: LOGIN
+         ======================================================= -->
+    <div id="view-login" class="view active">
+        <div class="auth-container">
+            <div class="login-box glass-panel">
+                <div class="login-header">
+                    <h1>EduConnect <span class="highlight">AI</span></h1>
+                    <p>Smart Guidance & Interaction Platform</p>
+                </div>
+                <div class="input-group">
+                    <label>User ID / Email</label>
+                    <input type="text" id="loginId" placeholder="Enter your academic ID" value="student@university.edu">
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPass" placeholder="Enter your password" value="password123">
+                </div>
+                <button class="btn primary-btn full-width-btn" onclick="navigateTo('dashboard')">Login to Platform</button>
+            </div>
+        </div>
+    </div>
+    <!-- =======================================================
+         SHARED NAVBAR FOR INSIDE APP
+         ======================================================= -->
+    <div id="app-navbar" class="view">
+        <nav class="navbar glass-panel">
+            <div class="nav-brand">EduConnect <span class="highlight">AI</span></div>
+            <div class="nav-links">
+                <span id="nav-dashboard" class="active" onclick="navigateTo('dashboard')">Dashboard</span>
+                <span id="nav-chat" onclick="navigateTo('chat')">Chat & Guidance</span>
+                <span id="nav-sponsor" class="sponsor-tab" onclick="alert('Welcome to the VIP Sponsor Lounge! Here you can redeem your ₹10,000 credits.')">⭐ VIP Sponsor</span>
+                <span class="btn secondary-btn logout-btn" onclick="navigateTo('logout')">Logout</span>
+            </div>
+        </nav>
+    </div>
+    <!-- =======================================================
+         VIEW 2: DASHBOARD
+         ======================================================= -->
+    <div id="view-dashboard" class="view">
+        <main class="dashboard-container">
+            <header class="dashboard-header">
+                <h2>Welcome back, <span class="highlight" id="userNameDisplay">Student!</span></h2>
+                <p>Your academic progress and support modules.</p>
+            </header>
+            <div class="grid-container">
+                <div class="card glass-panel">
+                    <h3>Academic Progress</h3>
+                    <div class="progress-stats">
+                        <div class="stat">
+                            <span class="stat-value highlight">85%</span>
+                            <span class="stat-label">Attendance</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value highlight">A-</span>
+                            <span class="stat-label">Average Grade</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card glass-panel">
+                    <h3>Personalized Recommendations</h3>
+                    <ul style="list-style: none; display: flex; flex-direction: column; gap: 10px;">
+                        <li style="padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px;">📚 Review Data Structures Module 4</li>
+                        <li style="padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px;">📝 Upcoming Quiz in Machine Learning</li>
+                        <li style="padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px;">💡 Suggested Reading: AI Ethics</li>
+                    </ul>
+                </div>
+                <div class="card glass-panel feature-card" id="mentorshipCard">
+                    <h3>Mentorship & Consultancy</h3>
+                    <p>Connect with experts for career guidance and advanced academic support.</p>
+                    <div class="mentorship-options" id="mentorshipOptions">
+                        <button class="btn secondary-btn" onclick="alert('Free guidance request sent to available mentors!')">Free Guidance</button>
+                        <button class="btn primary-btn" onclick="openModal('paymentModal')">Premium Sponsor</button>
+                    </div>
+                    
+                    <!-- Appears after payment -->
+                    <div class="sponsor-unlocked-content" id="sponsorUnlockedMsg">
+                        <h4 class="gold-highlight">⭐ Premium Sponsor Active</h4>
+                        <p style="font-size: 0.9rem; margin-top: 5px;">You have unlimited access to VIP mentors and your prize credits are active!</p>
+                    </div>
+                </div>
+                <div class="card glass-panel feature-card">
+                    <h3>Scholarships & Challenges</h3>
+                    <p>Participate in innovation challenges to earn rewards.</p>
+                    <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid var(--success); padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 15px;">
+                        <span style="font-size: 1.5rem; display: block; margin-bottom: 5px;">🏆</span>
+                        <h4 style="color: var(--success); margin-bottom: 5px;">Win ₹50,000 Prize Money!</h4>
+                        <p style="font-size: 0.85rem; color: var(--text-light);">Submit your AI project for the Hackathon by Friday.</p>
+                    </div>
+                    <button class="btn secondary-btn full-width-btn" onclick="alert('Enrolled in the AI Hackathon Challenge!')">Register for Challenge</button>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="btn primary-btn" style="padding: 15px 40px; font-size: 1.1rem;" onclick="navigateTo('chat')">Ask a Question / Connect with Faculty ➔</button>
+            </div>
+        </main>
+    </div>
+    <!-- =======================================================
+         VIEW 3: CHAT
+         ======================================================= -->
+    <div id="view-chat" class="view">
+        <main class="chat-layout">
+            <div class="sidebar glass-panel">
+                <h3>Faculty Contacts</h3>
+                <div class="contact-list">
+                    <div class="contact active-contact" onclick="selectContact('Prof. Smith', true, 'https://api.dicebear.com/7.x/avataaars/svg?seed=Smith')">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Smith" class="contact-avatar" alt="Avatar">
+                        <div class="contact-info">
+                            <h4>Prof. Smith</h4>
+                            <span class="status online">● Online</span>
+                        </div>
+                    </div>
+                    <div class="contact" onclick="selectContact('Dr. Alan', false, 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alan')">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Alan" class="contact-avatar" alt="Avatar" style="filter: grayscale(100%);">
+                        <div class="contact-info">
+                            <h4>Dr. Alan</h4>
+                            <span class="status offline">● Offline</span>
+                        </div>
+                    </div>
+                    <div class="contact" onclick="selectContact('Prof. Davis', false, 'https://api.dicebear.com/7.x/avataaars/svg?seed=Davis')">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Davis" class="contact-avatar" alt="Avatar" style="filter: grayscale(100%);">
+                        <div class="contact-info">
+                            <h4>Prof. Davis</h4>
+                            <span class="status offline">● Offline</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="chat-container glass-panel">
+                <div class="chat-header">
+                    <div>
+                        <h3 id="current-chat-name">Prof. Smith</h3>
+                        <span id="current-chat-status" class="status online">● Faculty Online - Direct Chat</span>
+                    </div>
+                    <div class="ai-badge" id="ai-badge" style="display: none;">🤖 AI Assistant Active</div>
+                </div>
+                <!-- Subject Selection -->
+                <div class="subject-selector">
+                    <h4>Quick Doubts:</h4>
+                    <button class="subject-btn" onclick="selectSubject('Computer Science')">💻 Computer Science</button>
+                    <button class="subject-btn" onclick="selectSubject('Mathematics')">📐 Mathematics</button>
+                    <button class="subject-btn" onclick="selectSubject('Physics')">⚛️ Physics</button>
+                    <button class="subject-btn gold-btn" onclick="selectSubject('VIP Premium Support')" style="display: none;" id="vipSubjectBtn">⭐ VIP Premium Support</button>
+                </div>
+                <div class="chat-messages" id="chatMessages">
+                    <!-- Initial Welcome Message -->
+                    <div class="message-row received">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Smith" class="message-avatar" id="current-teacher-avatar" alt="Teacher">
+                        <div class="message-content">
+                            <span class="teacher-indicator">Prof. Smith</span>
+                            Hello! I am currently online. Let me know if you have any questions regarding your coursework.
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chat-input-area">
+                    <!-- File Upload Button -->
+                    <button class="icon-btn" title="Upload Image File" onclick="document.getElementById('fileUpload').click()">📎</button>
+                    <input type="file" id="fileUpload" style="display: none;" accept="image/*" onchange="handleFileUpload(event)">
+                    
+                    <!-- Mock Sample Image Button for testing smoothly -->
+                    <button class="icon-btn" title="Send Mock Image" onclick="sendMockImage()">🖼️</button>
+                    
+                    <input type="text" id="messageInput" placeholder="Type your doubt or upload an image..." onkeypress="handleEnter(event)">
+                    <button class="btn primary-btn" onclick="sendMessage()">Send</button>
+                </div>
+            </div>
+        </main>
+    </div>
+    <!-- =======================================================
+         VIEW 4: LOGOUT (THANK YOU)
+         ======================================================= -->
+    <div id="view-logout" class="view">
+        <div class="auth-container">
+            <div class="login-box glass-panel" style="text-align: center;">
+                <div class="login-header">
+                    <h1>Thank <span class="highlight">You!</span></h1>
+                    <p>You have successfully logged out.</p>
+                </div>
+                <p style="margin-bottom: 30px; color: var(--text-muted); line-height: 1.6;">We hope our AI-powered interactions helped clear your doubts today and provided the guidance you needed.</p>
+                <button class="btn primary-btn" onclick="navigateTo('login')">Login Again</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        /* ==========================================================================
+           ROUTING & MODALS
+           ========================================================================== */
+        function navigateTo(viewId) {
+            document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+            const navbar = document.getElementById('app-navbar');
+            
+            if(viewId === 'login' || viewId === 'logout') {
+                navbar.classList.remove('active');
+            } else {
+                navbar.classList.add('active');
+            }
+            if(document.getElementById('nav-' + viewId)) {
+                document.querySelectorAll('.nav-links span').forEach(el => el.classList.remove('active'));
+                document.getElementById('nav-' + viewId).classList.add('active');
+            }
+            document.getElementById('view-' + viewId).classList.add('active');
+        }
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+        
+        /* ==========================================================================
+           PAYMENT & SPONSOR LOGIC
+           ========================================================================== */
+        let isSponsor = false;
+        function processPayment() {
+            closeModal('paymentModal');
+            // Show the prize modal
+            setTimeout(() => { openModal('prizeModal'); }, 300);
+        }
+        function activateSponsorMode() {
+            isSponsor = true;
+            // Update UI elements for Sponsor
+            document.getElementById('userNameDisplay').innerText = 'Student (VIP Sponsor) ⭐';
+            document.getElementById('nav-sponsor').classList.add('unlocked');
+            document.getElementById('mentorshipOptions').style.display = 'none';
+            document.getElementById('sponsorUnlockedMsg').classList.add('active');
+            document.getElementById('vipSubjectBtn').style.display = 'inline-block';
+        }
+        /* ==========================================================================
+           CHAT & AI LOGIC
+           ========================================================================== */
+        let isCurrentContactOnline = true;
+        let currentContactName = 'Prof. Smith';
+        let currentContactAvatar = 'https://api.dicebear.com/7.x/avataaars/svg?seed=Smith';
+        const aiAvatarUrl = 'https://api.dicebear.com/7.x/bottts/svg?seed=EduBot';
+        const userAvatarUrl = 'https://api.dicebear.com/7.x/avataaars/svg?seed=Student';
+        function selectContact(name, isOnline, avatarUrl) {
+            currentContactName = name;
+            isCurrentContactOnline = isOnline;
+            currentContactAvatar = avatarUrl;
+            
+            const contacts = document.querySelectorAll('.contact');
+            contacts.forEach(el => el.classList.remove('active-contact'));
+            event.currentTarget.classList.add('active-contact');
+            document.getElementById('current-chat-name').innerText = name;
+            const statusEl = document.getElementById('current-chat-status');
+            const aiBadge = document.getElementById('ai-badge');
+            const messagesContainer = document.getElementById('chatMessages');
+            
+            messagesContainer.innerHTML = ''; // clear chat
+            if(isOnline) {
+                statusEl.className = 'status online';
+                statusEl.innerText = '● Faculty Online - Direct Chat';
+                aiBadge.style.display = 'none';
+                document.getElementById('current-teacher-avatar').src = avatarUrl;
+                appendMessage('received', `Hello! I am currently online. How can I help you today?`, avatarUrl, name);
+            } else {
+                statusEl.className = 'status offline';
+                statusEl.innerText = '● Faculty Offline - Auto Support Mode';
+                aiBadge.style.display = 'block';
+                appendMessage('received', `<b>[AI Auto-Responder]</b> ${name} is offline. I am the AI Assistant. I can help resolve doubts or analyze images while you wait!`, aiAvatarUrl, 'AI Assistant');
+            }
+        }
+        function selectSubject(subject) {
+            appendMessage('sent', `I need help regarding: <b>${subject}</b>`, userAvatarUrl, 'You');
+            
+            setTimeout(() => {
+                if(subject === 'VIP Premium Support') {
+                    appendMessage('received', `<b>[VIP System]</b> Connecting you to the priority response queue... Your dedicated expert is analyzing your query now.`, aiAvatarUrl, 'VIP Concierge');
+                } else if(isCurrentContactOnline) {
+                    appendMessage('received', `Sure, I teach ${subject}. What specific topic or problem are you stuck on? Feel free to send an image.`, currentContactAvatar, currentContactName);
+                } else {
+                    appendMessage('received', `<b>[AI Response]</b> I see you need help with ${subject}. As ${currentContactName} is offline, I've loaded the ${subject} knowledge base. Please ask your question!`, aiAvatarUrl, 'AI Assistant');
+                }
+            }, 1000);
+        }
+        function handleEnter(e) { if(e.key === 'Enter') sendMessage(); }
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            if(!text) return;
+            appendMessage('sent', text, userAvatarUrl, 'You');
+            input.value = '';
+            setTimeout(() => {
+                if(isCurrentContactOnline) {
+                    appendMessage('received', `That's a good question. Let's break it down step-by-step. Have you checked the recent lecture slides on the dashboard? They cover this concept in detail.`, currentContactAvatar, currentContactName);
+                } else {
+                    generateAIResponse(text);
+                }
+            }, 1200);
+        }
+        /* Logic for actual file uploads */
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if(file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    sendImageMessage(e.target.result, "Local Upload");
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+        /* Logic for sending a mock image quickly (Runs smoothly without needing real files) */
+        function sendMockImage() {
+            const mockImgUrl = 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=400&q=80';
+            sendImageMessage(mockImgUrl, "Code Snippet.jpg");
+        }
+        function sendImageMessage(imgUrl, fileName) {
+            const imgHtml = `
+                <img src="${imgUrl}" style="max-width: 100%; border-radius: 10px; margin-top: 5px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);" alt="Uploaded Content">
+                <br> <small style="color: #cbd5e1; font-size: 0.75rem;">📎 ${fileName}</small>
+            `;
+            appendMessage('sent', imgHtml, userAvatarUrl, 'You');
+            
+            setTimeout(() => {
+                if(isCurrentContactOnline) {
+                    appendMessage('received', "I see the image you uploaded. The error seems to be on line 42 where the syntax is missing a semicolon. Correct that and try compiling again.", currentContactAvatar, currentContactName);
+                } else {
+                    const aiVisionResponse = `
+                        <b>[AI Vision Analysis]</b> I have scanned the image provided.<br><br>
+                        <img src="https://images.unsplash.com/photo-1555949963-aa79dcee981c?auto=format&fit=crop&w=300&q=80" style="max-width: 100%; border-radius: 10px; margin-top: 10px; border: 2px solid var(--ai-accent);">
+                        <br><small style="color: var(--ai-accent);">✓ AI Context Generated</small><br><br>
+                        It appears to be related to your coursework code. The issue typically stems from missing parameters. Let me know if you want the exact code fix!
+                    `;
+                    appendMessage('received', aiVisionResponse, aiAvatarUrl, 'AI Assistant');
+                }
+            }, 1500);
+        }
+        function appendMessage(type, content, avatarSrc, senderName) {
+            const container = document.getElementById('chatMessages');
+            const rowDiv = document.createElement('div');
+            rowDiv.className = `message-row ${type}`;
+            
+            const indicatorColor = (senderName === 'AI Assistant') ? 'var(--ai-accent)' : 
+                                   (senderName === 'VIP Concierge') ? 'var(--gold)' : 
+                                   (type === 'sent') ? '#cbd5e1' : 'var(--success)';
+            rowDiv.innerHTML = `
+                <img src="${avatarSrc}" class="message-avatar" alt="${senderName}">
+                <div class="message-content">
+                    <span style="font-size: 0.75rem; color: ${indicatorColor}; font-weight: bold; margin-bottom: 5px; display: block;">${senderName}</span>
+                    ${content}
+                </div>
+            `;
+            container.appendChild(rowDiv);
+            
+            // Smoothly scroll to bottom
+            container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+        }
+        function generateAIResponse(userText) {
+            const lower = userText.toLowerCase();
+            let response = "<b>[AI Response]</b> I can assist you with that. Could you provide a bit more context or upload an image of the problem using the 🖼️ or 📎 buttons?";
+            
+            if(lower.includes('hello') || lower.includes('hi')) {
+                response = "<b>[AI Response]</b> Hello! How can I assist you with your academic doubts today while your teacher is away?";
+            } else if(lower.includes('error') || lower.includes('bug') || lower.includes('not working')) {
+                response = "<b>[AI Response]</b> It seems you're facing a technical error. Please paste the exact error log or upload a screenshot so I can use AI Vision to debug it for you.";
+            } else if(lower.includes('scholarship') || lower.includes('prize') || lower.includes('money')) {
+                response = "<b>[AI Response]</b> Did you know you can win ₹50,000 Prize Money? Check out the 'Scholarships & Challenges' module on your Dashboard!";
+            }
+            appendMessage('received', response, aiAvatarUrl, 'AI Assistant');
+        }
+    </script>
+</body>
+</html>
